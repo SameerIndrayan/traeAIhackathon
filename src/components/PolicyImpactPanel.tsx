@@ -20,7 +20,8 @@ export function PolicyImpactPanel({ attributions, rules }: PolicyImpactPanelProp
         {attributions.map((attr) => {
           const rule = rules.find(r => r.id === attr.ruleId);
           const ruleName = rule?.type === 'expenseApprovalThreshold' ? 'Expense Approval' : 
-                           rule?.type === 'paymentTiming' ? 'Payment Timing' : attr.ruleId;
+                           rule?.type === 'paymentTiming' ? 'Payment Timing' : 
+                           rule?.type === 'butterflyEffect' ? 'Butterfly Effect' : attr.ruleId;
           
           const impactLabel = attr.estimatedCashImpact >= 0 ? "Improved cash position by" : "Reduced cash position by";
           const colorClass = attr.estimatedCashImpact >= 0 ? "text-green-600" : "text-red-600";

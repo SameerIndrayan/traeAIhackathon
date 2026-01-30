@@ -34,6 +34,18 @@ export const RuleSchema = z.discriminatedUnion("type", [
     }),
     enabled: z.boolean(),
   }),
+  z.object({
+    id: z.string(),
+    type: z.literal("butterflyEffect"),
+    params: z.object({
+      description: z.string(),
+      divergenceScore: z.number(),
+      sentiment: z.string(),
+      revenueMultiplier: z.number(),
+      expenseMultiplier: z.number(),
+    }),
+    enabled: z.boolean(),
+  }),
 ]);
 
 export type Rule = z.infer<typeof RuleSchema>;

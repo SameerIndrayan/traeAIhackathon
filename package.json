@@ -14,6 +14,7 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.1.0",
     "@types/papaparse": "^5.5.2",

@@ -11,6 +11,7 @@ import { TimelineChart } from './TimelineChart';
 import { DiffPanel } from './DiffPanel';
 import { PolicyImpactPanel } from './PolicyImpactPanel';
 import { InsightPanel } from './InsightPanel';
+import { ButterflyPanel } from './ButterflyPanel';
 
 interface SimulatorProps {
   initialTransactions: Transaction[];
@@ -32,6 +33,28 @@ export default function Simulator({ initialTransactions }: SimulatorProps) {
       enabled: false,
     }
   ]);
+
+  const handleButterflyApply = (description: string, result: any) => {
+    // 1. Remove existing butterfly rules to avoid stacking chaos (optional, but safer for demo)
+    const cleanRules = rules.filter(r => r.type !== 'butterflyEffect');
+    
+    // 2. Add new butterfly rule
+    const newRule: Rule = {
+      id: `butterfly-${Date.now()}`,
+      type: 'butterflyEffect',
+      params: {
+        description,
+        divergenceScore: result.divergenceScore,
+        sentiment: result.sentiment,
+        revenueMultiplier: result.revenueMultiplier,
+        expenseMultiplier: result.expenseMultiplier,
+      },
+      enabled: true,
+    };
+    
+    setRules([...cleanRules, newRule]);
+    setShowReplay(true); // Auto-enable replay
+  };
 
   // Simulation Loop
   const { baselineSeries, alternateSeries, metrics, attributions, insight } = useMemo(() => {
@@ -100,12 +123,16 @@ export default function Simulator({ initialTransactions }: SimulatorProps) {
         {/* Left: Controls (Always visible, but disabled/dimmed if replay is off? Or maybe just let them edit settings?) 
             Let's keep them enabled so user can set up rules before toggling replay, or just leave as is.
         */}
-        <div className={`w-full lg:w-1/4 transition-opacity duration-300 ${showReplay ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
-          <RulePanel 
-            rules={rules} 
-            onToggleRule={handleToggleRule} 
-            onUpdateParams={handleUpdateParams} 
-          />
+        <div className={`w-full lg:w-1/4 space-y-6 transition-opacity duration-300`}>
+          <ButterflyPanel onApply={handleButterflyApply} />
+          
+          <div className={`${showReplay ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+            <RulePanel 
+              rules={rules} 
+              onToggleRule={handleToggleRule} 
+              onUpdateParams={handleUpdateParams} 
+            />
+          </div>
         </div>
 
         {/* Center/Right: Visualization */}
