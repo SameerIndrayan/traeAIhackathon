@@ -13,7 +13,7 @@ export function InsightPanel({ insight }: InsightPanelProps) {
     <div className="p-5 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg shadow-sm border border-indigo-100 space-y-4">
       <div className="flex items-center gap-2 border-b border-indigo-200 pb-2">
         <Sparkles className="w-5 h-5 text-indigo-600" />
-        <h2 className="text-lg font-bold text-indigo-900">AI Policy Insight (Powered by MiniMax)</h2>
+        <h2 className="text-lg font-bold text-indigo-900">AI Policy Insight</h2>
       </div>
       
       <div className="text-gray-800 leading-relaxed">

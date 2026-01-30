@@ -11,14 +11,16 @@ import { TimelineChart } from './TimelineChart';
 import { DiffPanel } from './DiffPanel';
 import { PolicyImpactPanel } from './PolicyImpactPanel';
 import { InsightPanel } from './InsightPanel';
-import { ButterflyPanel } from './ButterflyPanel';
 import { ConstraintPanel } from './ConstraintPanel';
+import { HowItWorks } from './HowItWorks';
+import { ButterflyPanel } from './ButterflyPanel';
 
 interface SimulatorProps {
   initialTransactions: Transaction[];
 }
 
 export default function Simulator({ initialTransactions }: SimulatorProps) {
+  const [activeTab, setActiveTab] = useState<'simulation' | 'how-it-works'>('simulation');
   const [showReplay, setShowReplay] = useState(false);
   const [rules, setRules] = useState<Rule[]>([
     {
@@ -105,54 +107,78 @@ export default function Simulator({ initialTransactions }: SimulatorProps) {
 
   return (
     <div className="space-y-6">
-      {/* Top Toggle: Time Travel Demo Switch */}
-      <div className="flex items-center justify-between bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-        <div className="flex items-center gap-3">
-          <span className="font-semibold text-gray-800">Compare with replayed history</span>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input 
-              type="checkbox" 
-              checked={showReplay} 
-              onChange={(e) => setShowReplay(e.target.checked)}
-              className="sr-only peer" 
-            />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-          </label>
-        </div>
-        <p className="text-sm text-gray-500">
-          {showReplay ? "Showing Diff Analysis" : "Showing Baseline Only"}
-        </p>
+      {/* Tab Navigation */}
+      <div className="flex space-x-4 border-b border-gray-200">
+        <button
+          className={`py-2 px-4 font-medium text-sm focus:outline-none ${activeTab === 'simulation' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+          onClick={() => setActiveTab('simulation')}
+        >
+          Simulation
+        </button>
+        <button
+          className={`py-2 px-4 font-medium text-sm focus:outline-none ${activeTab === 'how-it-works' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+          onClick={() => setActiveTab('how-it-works')}
+        >
+          How It Works
+        </button>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Left: Controls (Always visible, but disabled/dimmed if replay is off? Or maybe just let them edit settings?) 
-            Let's keep them enabled so user can set up rules before toggling replay, or just leave as is.
-        */}
-        <div className={`w-full lg:w-1/4 space-y-6 transition-opacity duration-300`}>
-          <ButterflyPanel onApply={handleButterflyApply} />
-          
-          <div className={`${showReplay ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
-            <RulePanel 
-              rules={rules} 
-              onToggleRule={handleToggleRule} 
-              onUpdateParams={handleUpdateParams} 
-            />
+      {activeTab === 'how-it-works' ? (
+        <div className="animate-in fade-in duration-300">
+          <HowItWorks />
+        </div>
+      ) : (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          {/* Top Toggle: Time Travel Demo Switch */}
+          <div className="flex items-center justify-between bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center gap-3">
+              <span className="font-semibold text-gray-800">Compare with replayed history</span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={showReplay} 
+                  onChange={(e) => setShowReplay(e.target.checked)}
+                  className="sr-only peer" 
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
+            <p className="text-sm text-gray-500">
+              {showReplay ? "Showing Diff Analysis" : "Showing Baseline Only"}
+            </p>
+          </div>
+
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Left: Controls (Always visible, but disabled/dimmed if replay is off? Or maybe just let them edit settings?) 
+                Let's keep them enabled so user can set up rules before toggling replay, or just leave as is.
+            */}
+            <div className={`w-full lg:w-1/4 space-y-6 transition-opacity duration-300`}>
+              <ButterflyPanel onApply={handleButterflyApply} />
+              
+              <div className={`${showReplay ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+                <RulePanel 
+                  rules={rules} 
+                  onToggleRule={handleToggleRule} 
+                  onUpdateParams={handleUpdateParams} 
+                />
+              </div>
+            </div>
+
+            {/* Center/Right: Visualization */}
+            <div className="w-full lg:w-3/4 space-y-6">
+              <TimelineChart baseline={baselineSeries} alternate={alternateSeries} />
+              {metrics && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+                  <DiffPanel metrics={metrics} />
+                  {constraints && <ConstraintPanel constraints={constraints} />}
+                  {insight && <InsightPanel insight={insight} />}
+                  <PolicyImpactPanel attributions={attributions} rules={rules} />
+                </div>
+              )}
+            </div>
           </div>
         </div>
-
-        {/* Center/Right: Visualization */}
-        <div className="w-full lg:w-3/4 space-y-6">
-          <TimelineChart baseline={baselineSeries} alternate={alternateSeries} />
-          {metrics && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
-              <DiffPanel metrics={metrics} />
-              {constraints && <ConstraintPanel constraints={constraints} />}
-              {insight && <InsightPanel insight={insight} />}
-              <PolicyImpactPanel attributions={attributions} rules={rules} />
-            </div>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 }

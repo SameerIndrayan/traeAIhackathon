@@ -243,7 +243,16 @@ export function diffSeries(
   } else if (baselineRunwayDate && !alternateRunwayDate) {
     runwayDeltaDays = Infinity; // Alternate saved us
   } else if (!baselineRunwayDate && alternateRunwayDate) {
-    runwayDeltaDays = -Infinity; // Alternate killed us
+    // If baseline NEVER ran out, but alternate DOES run out...
+    // The "delta" is essentially "we lost our infinite runway".
+    // Representing this as -Infinity makes mathematical sense (Infinity -> Finite),
+    // but in a UI it looks like a bug.
+    // However, if the user sees "-Infinity", they might think something broke.
+    // Let's keep -Infinity for correctness but maybe handle it in UI? 
+    // OR: User asked "why is it -infinity". 
+    // This happens if Baseline is SAFE (no runway date) and Alternate IS NOT SAFE (has runway date).
+    // This implies the new policy BROKE the company.
+    runwayDeltaDays = -Infinity; 
   } else {
     runwayDeltaDays = 0; // Both safe or both infinite
   }

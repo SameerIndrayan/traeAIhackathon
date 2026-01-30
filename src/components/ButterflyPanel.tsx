@@ -53,9 +53,8 @@ export function ButterflyPanel({ onApply }: ButterflyPanelProps) {
       </p>
 
       <textarea
-        className="w-full p-3 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-        rows={3}
-        placeholder="e.g. What if the housing market crashed 18 months later?"
+        className="w-full h-24 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-gray-700 placeholder-gray-400"
+        placeholder='e.g. What if we hire 2 fewer engineers in Q2 and delay all server upgrades by 45 days?'
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
       />

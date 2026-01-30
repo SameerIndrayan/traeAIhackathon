@@ -17,7 +17,7 @@ export function DiffPanel({ metrics }: DiffPanelProps) {
         <MetricCard 
           label="Runway Delta" 
           value={metrics.runwayDeltaDays === Infinity ? "∞" : 
-                 metrics.runwayDeltaDays === -Infinity ? "-∞" : 
+                 metrics.runwayDeltaDays === -Infinity ? "Broke" : 
                  `${metrics.runwayDeltaDays > 0 ? '+' : ''}${metrics.runwayDeltaDays} days`}
           isGood={metrics.runwayDeltaDays >= 0}
           neutral={metrics.runwayDeltaDays === 0}
