@@ -1,5 +1,99 @@
-import { CashPoint, DiffMetrics, Transaction, PolicyAttribution, Rule } from "./types";
-import { differenceInDays, parseISO } from "date-fns";
+import { CashPoint, DiffMetrics, Transaction, PolicyAttribution, Rule, ConstraintMetrics, ConstraintComparison } from "./types";
+import { differenceInDays, parseISO, addDays, format } from "date-fns";
+
+// ... existing code ...
+
+function computeSeriesConstraints(series: CashPoint[], txns: Transaction[]): ConstraintMetrics {
+  // 1. Minimum Cash Buffer (Threshold: $75,000)
+  const MIN_BUFFER_THRESHOLD = 75000;
+  let daysBelowThreshold = 0;
+  let longestStreakBelow = 0;
+  let currentStreak = 0;
+
+  series.forEach(p => {
+    if (p.balance < MIN_BUFFER_THRESHOLD) {
+      daysBelowThreshold++;
+      currentStreak++;
+    } else {
+      if (currentStreak > longestStreakBelow) longestStreakBelow = currentStreak;
+      currentStreak = 0;
+    }
+  });
+  // Check final streak
+  if (currentStreak > longestStreakBelow) longestStreakBelow = currentStreak;
+
+  // 2. Sharp Cash Drop Events (> $30,000 within 7 days)
+  const DROP_THRESHOLD = 30000;
+  const DROP_WINDOW = 7;
+  let sharpDropCount = 0;
+  let worstDrop = 0;
+
+  // We check every window of 7 days
+  // Series is dense.
+  for (let i = 0; i < series.length; i++) {
+    // Look ahead up to 7 days (or end of series)
+    // Actually, "drop within 7 days" means look at any two points separated by <= 7 days?
+    // Or rolling 7 day window? 
+    // Usually: High point - Low point within window > Threshold.
+    // Simple implementation: Compare day[i] vs day[i+7] (or any day in between).
+    // Let's check max drop from day[i] to day[i+k] where k <= 7.
+    
+    const startBalance = series[i].balance;
+    for (let k = 1; k <= DROP_WINDOW; k++) {
+      if (i + k >= series.length) break;
+      const endBalance = series[i + k].balance;
+      const drop = startBalance - endBalance;
+      
+      if (drop > worstDrop) worstDrop = drop;
+      
+      // We only count "events". A single huge crash might trigger multiple windows.
+      // Let's count "distinct" events? 
+      // Simplest robust metric: Count days where the 7-day forward outlook drops > 30k.
+      if (drop > DROP_THRESHOLD) {
+        sharpDropCount++;
+        // Skip ahead to avoid double counting the same crash?
+        // Prompt says "Count of such events". 
+        // If I drop 50k in 1 day, that triggers for day[i], day[i-1], etc.
+        // Let's count unique "start days" that initiate a sharp drop.
+        break; // Count this start day once
+      }
+    }
+  }
+
+  // 3. Delayed Obligations (> 30 days)
+  // Check audit trail.
+  let countDelayedOver30Days = 0;
+  let maxDelayDays = 0;
+
+  txns.forEach(tx => {
+    if (tx.audit && tx.audit.originalDate) {
+      const original = parseISO(tx.audit.originalDate);
+      const current = parseISO(tx.date);
+      const diff = differenceInDays(current, original);
+      
+      if (diff > 30) countDelayedOver30Days++;
+      if (diff > maxDelayDays) maxDelayDays = diff;
+    }
+  });
+
+  return {
+    minCashBuffer: { daysBelowThreshold, longestStreakBelow },
+    sharpDrops: { eventCount: sharpDropCount, worstDrop },
+    delayedObligations: { countDelayedOver30Days, maxDelayDays }
+  };
+}
+
+export function computeConstraints(
+  baselineSeries: CashPoint[],
+  alternateSeries: CashPoint[],
+  baselineTxns: Transaction[],
+  alternateTxns: Transaction[]
+): ConstraintComparison {
+  return {
+    baseline: computeSeriesConstraints(baselineSeries, baselineTxns),
+    alternate: computeSeriesConstraints(alternateSeries, alternateTxns)
+  };
+}
 
 export function computeAttribution(
   baselineSeries: CashPoint[],

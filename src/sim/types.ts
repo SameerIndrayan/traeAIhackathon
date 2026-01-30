@@ -60,3 +60,23 @@ export type PolicyAttribution = {
   estimatedCashImpact: number;
 };
 
+export type ConstraintMetrics = {
+  minCashBuffer: {
+    daysBelowThreshold: number;
+    longestStreakBelow: number;
+  };
+  sharpDrops: {
+    eventCount: number;
+    worstDrop: number; // Positive magnitude
+  };
+  delayedObligations: {
+    countDelayedOver30Days: number;
+    maxDelayDays: number;
+  };
+};
+
+export type ConstraintComparison = {
+  baseline: ConstraintMetrics;
+  alternate: ConstraintMetrics;
+};
+
