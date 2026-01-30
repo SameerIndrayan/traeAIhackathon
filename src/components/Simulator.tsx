@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { Transaction, Rule } from '../sim/types';
 import { applyRules } from '../sim/applyRules';
 import { calcDailyCashSeries } from '../sim/calcCashSeries';
-import { diffSeries, computeAttribution } from '../sim/diff';
+import { diffSeries, computeAttribution, computeConstraints } from '../sim/diff';
 import { generateMiniMaxInsight } from '../sim/insights/minimaxPlaceholder';
 import { RulePanel } from './RulePanel';
 import { TimelineChart } from './TimelineChart';
@@ -12,6 +12,7 @@ import { DiffPanel } from './DiffPanel';
 import { PolicyImpactPanel } from './PolicyImpactPanel';
 import { InsightPanel } from './InsightPanel';
 import { ButterflyPanel } from './ButterflyPanel';
+import { ConstraintPanel } from './ConstraintPanel';
 
 interface SimulatorProps {
   initialTransactions: Transaction[];
@@ -57,7 +58,7 @@ export default function Simulator({ initialTransactions }: SimulatorProps) {
   };
 
   // Simulation Loop
-  const { baselineSeries, alternateSeries, metrics, attributions, insight } = useMemo(() => {
+  const { baselineSeries, alternateSeries, metrics, attributions, insight, constraints } = useMemo(() => {
     // 1. Baseline
     const baselineSeries = calcDailyCashSeries(initialTransactions, 0);
 
@@ -68,7 +69,8 @@ export default function Simulator({ initialTransactions }: SimulatorProps) {
         alternateSeries: [], // Hide line
         metrics: null, // Hide metrics
         attributions: [],
-        insight: null
+        insight: null,
+        constraints: null
       };
     }
 
@@ -87,7 +89,10 @@ export default function Simulator({ initialTransactions }: SimulatorProps) {
     // 6. Insight (MiniMax Placeholder)
     const insight = generateMiniMaxInsight(metrics, attributions, rules);
 
-    return { baselineSeries, alternateSeries, metrics, attributions, insight };
+    // 7. Constraints
+    const constraints = computeConstraints(baselineSeries, alternateSeries, initialTransactions, alternateTransactions);
+
+    return { baselineSeries, alternateSeries, metrics, attributions, insight, constraints };
   }, [initialTransactions, rules, showReplay]);
 
   const handleToggleRule = (id: string, enabled: boolean) => {
@@ -141,6 +146,7 @@ export default function Simulator({ initialTransactions }: SimulatorProps) {
           {metrics && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
               <DiffPanel metrics={metrics} />
+              {constraints && <ConstraintPanel constraints={constraints} />}
               {insight && <InsightPanel insight={insight} />}
               <PolicyImpactPanel attributions={attributions} rules={rules} />
             </div>

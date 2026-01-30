@@ -1,6 +1,6 @@
 import { applyRules } from "../applyRules";
 import { calcDailyCashSeries } from "../calcCashSeries";
-import { diffSeries, computeAttribution } from "../diff";
+import { diffSeries, computeAttribution, computeConstraints } from "../diff";
 import { generateMiniMaxInsight } from "../insights/minimaxPlaceholder";
 import { Transaction, Rule } from "../types";
 import { loadTransactionsFromCsv } from "../loadCsv";
@@ -219,6 +219,45 @@ describe("Simulation Engine", () => {
     expect(insight.drivers).toHaveLength(1);
     expect(insight.drivers[0]).toContain("Stricter expense approval");
     expect(insight.tradeoffs).toContain("Runway extended by 10 days, providing more time to react to market changes.");
+  });
+
+  test("Computes constraints correctly", () => {
+    // 1. Buffer Test
+    // Create series with 2 days < 75k
+    const series = [
+      { date: "2023-01-01", balance: 80000 },
+      { date: "2023-01-02", balance: 70000 }, // Violation
+      { date: "2023-01-03", balance: 70000 }, // Violation
+      { date: "2023-01-04", balance: 80000 }
+    ];
+    
+    // 2. Drop Test
+    // Drop 80k -> 40k (40k drop) in 1 day
+    const dropSeries = [
+      { date: "2023-01-01", balance: 80000 },
+      { date: "2023-01-02", balance: 40000 } // Drop 40k > 30k
+    ];
+    
+    // 3. Delay Test
+    const txns: Transaction[] = [
+      { 
+        id: "1", date: "2023-02-01", amount: -100, type: "expense", 
+        audit: { originalDate: "2023-01-01", changedBy: ["r1"] } // 31 days
+      }
+    ];
+
+    const result = computeConstraints(series, dropSeries, [], txns);
+    
+    // Check Baseline (Buffer)
+    expect(result.baseline.minCashBuffer.daysBelowThreshold).toBe(2);
+    expect(result.baseline.minCashBuffer.longestStreakBelow).toBe(2);
+    
+    // Check Alternate (Drop & Delay)
+    expect(result.alternate.sharpDrops.eventCount).toBe(1);
+    expect(result.alternate.sharpDrops.worstDrop).toBe(40000);
+    
+    expect(result.alternate.delayedObligations.countDelayedOver30Days).toBe(1);
+    expect(result.alternate.delayedObligations.maxDelayDays).toBe(31);
   });
 });
 
